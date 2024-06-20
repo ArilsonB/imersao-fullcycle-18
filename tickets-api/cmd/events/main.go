@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	httpHandler "github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/http"
+	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/repository"
+	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/service"
 	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/usecase"
 )
 
@@ -30,7 +32,7 @@ func main() {
 	listEventsUseCase := usecase.NewListEventsUseCase(eventRepo)
 	getEventUseCase := usecase.NewGetEventUseCase(eventRepo)
 	listSpotsUseCase := usecase.NewListSpotsUseCase(eventRepo)
-	buyTicketsUseCase := usecase.BuyTicketsUseCase(eventRepo, partnerFactory)
+	buyTicketsUseCase := usecase.NewBuyTicketsUseCase(eventRepo, partnerFactory)
 
 	eventsHandler := httpHandler.NewEventHandler(
 		listEventsUseCase,

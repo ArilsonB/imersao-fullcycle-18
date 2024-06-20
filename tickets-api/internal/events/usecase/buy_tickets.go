@@ -1,6 +1,9 @@
 package usecase
 
-import "github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/domain"
+import (
+	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/domain"
+	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/service"
+)
 
 type BuyTicketsInputDTO struct {
 	EventID string `json:"event_id"`
