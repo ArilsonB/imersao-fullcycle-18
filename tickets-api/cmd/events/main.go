@@ -14,18 +14,20 @@ import (
 	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/repository"
 	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/service"
 	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/usecase"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
 	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/test_db")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
-	eventRepo, error := repository.NewMysqlEventRepository(db)
-	if error != nil {
-		panic(error)
+	// Repositório
+	eventRepo, err := repository.NewMysqlEventRepository(db)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	partnerBaseURLs := map[int]string{
@@ -33,29 +35,38 @@ func main() {
 		2: "http://localhost:3001",
 	}
 
+
 	partnerFactory := service.NewPartnerFactory(partnerBaseURLs)
 
 	listEventsUseCase := usecase.NewListEventsUseCase(eventRepo)
 	getEventUseCase := usecase.NewGetEventUseCase(eventRepo)
-	listSpotsUseCase := usecase.NewListSpotsUseCase(eventRepo)
+	createEventUseCase := usecase.NewCreateEventUseCase(eventRepo)
 	buyTicketsUseCase := usecase.NewBuyTicketsUseCase(eventRepo, partnerFactory)
+	createSpotsUseCase := usecase.NewCreateSpotsUseCase(eventRepo)
+	listSpotsUseCase := usecase.NewListSpotsUseCase(eventRepo)
 
-	eventsHandler := httpHandler.NewEventHandler(
+
+	// Handlers HTTP
+	eventsHandler := httpHandler.NewEventsHandler(
 		listEventsUseCase,
-		listSpotsUseCase,
 		getEventUseCase,
+		createEventUseCase,
 		buyTicketsUseCase,
+		createSpotsUseCase,
+		listSpotsUseCase,
 	)
+
 
 	r := http.NewServeMux()
 
-	r.HandleFunc("GET /events", eventsHandler.ListEvents)
-
-	r.HandleFunc("GET /events/{eventID}", eventsHandler.GetEvent)
-
-	r.HandleFunc("GET /events/{eventID}/spots", eventsHandler.ListSpots)
-
+	r.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+	r.HandleFunc("/events", eventsHandler.ListEvents)
+	r.HandleFunc("/events/{eventID}", eventsHandler.GetEvent)
+	r.HandleFunc("/events/{eventID}/spots", eventsHandler.ListSpots)
+	r.HandleFunc("POST /events", eventsHandler.CreateEvent)
 	r.HandleFunc("POST /checkout", eventsHandler.BuyTickets)
+	r.HandleFunc("POST /events/{eventID}/spots", eventsHandler.CreateSpots)
+
 
 	server := &http.Server{
 		Addr:    ":8080",
