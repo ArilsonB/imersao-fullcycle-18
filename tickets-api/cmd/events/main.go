@@ -1,8 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	httpHandler "github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/http"
 	"github.com/arilsonb/imersao-fullcycle-18/tickets-api/internal/events/infra/repository"
@@ -11,7 +17,7 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/events")
+	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/test_db")
 	if err != nil {
 		panic(err)
 	}
@@ -51,5 +57,35 @@ func main() {
 
 	r.HandleFunc("POST /checkout", eventsHandler.BuyTickets)
 
-	http.ListenAndServe(":8080", r)
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
+	idleConnsClosed := make(chan struct{})
+	go func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
+		<-sigint
+
+		// Recebido sinal de interrupção, iniciando o graceful shutdown
+		log.Println("Recebido sinal de interrupção, iniciando o graceful shutdown...")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(ctx); err != nil {
+			log.Printf("Erro no graceful shutdown: %v\n", err)
+		}
+		close(idleConnsClosed)
+	}()
+
+	// Iniciando o servidor HTTP
+	log.Println("Servidor HTTP rodando na porta 8080")
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatalf("Erro ao iniciar o servidor HTTP: %v\n", err)
+	}
+
+	<-idleConnsClosed
+	log.Println("Servidor HTTP finalizado")
 }
