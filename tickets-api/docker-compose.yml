@@ -1,21 +1,21 @@
 services:
-  # app:
-  #   build: .
-  #   ports:
-  #     - 8080:8080
-  #   volumes:
-  #     - ./:/home/go/app
-  mysql:
-    image: mysql:8.0.30-debian
-    container_name: test-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
+  app:
+    build: .
     ports:
-      - 3306:3306
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+      - 8080:8080
     volumes:
-      - ./.docker/mysql:/docker-entrypoint-initdb.d
+      - ./:/home/go/app
+  # mysql:
+  #   image: mysql:8.0.30-debian
+  #   container_name: test-mysql
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #   ports:
+  #     - 3306:3306
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+  #   volumes:
+  #     - ./.docker/mysql:/docker-entrypoint-initdb.d
